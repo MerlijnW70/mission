@@ -1,5 +1,10 @@
 # Mission
 
+[![CI](https://github.com/MerlijnW70/mission/actions/workflows/ci.yml/badge.svg)](https://github.com/MerlijnW70/mission/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/MerlijnW70/mission?sort=semver)](https://github.com/MerlijnW70/mission/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+[![Zero dependencies](https://img.shields.io/badge/dependencies-0-success.svg)](Cargo.toml)
+
 **A fast, robust HTML parser and CSS selector engine that won't crash on bad HTML.**
 Zero dependencies, one small binary, no network — turn messy real-world HTML into clean text or
 structured data. **Free and open source** (MIT / Apache-2.0).
@@ -41,9 +46,9 @@ a pipe, or `curl`. That keeps it small, fast, and safe on untrusted input.
 ## 🤖 Use it as an MCP tool (give your agent HTML superpowers)
 
 Installing Mission also gives you **`mission-mcp`**, a [Model Context Protocol](https://modelcontextprotocol.io)
-server. Point any MCP client (Claude Desktop, Cursor, Zed, Claude Code, VS Code, …) at it and your
-agent gets four tools — `select`, `select_text`, `render`, `attributes` — to slice HTML with CSS
-selectors, deterministically and locally.
+server. Point any MCP-compatible editor or environment at it and your agent gets four tools —
+`select`, `select_text`, `render`, `attributes` — to slice HTML with CSS selectors, deterministically
+and locally.
 
 Most MCP hosts take the same block — add it to your client's server config and restart:
 
