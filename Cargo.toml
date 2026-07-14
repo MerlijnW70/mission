@@ -1,9 +1,9 @@
 [package]
 name = "mission"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.85"
-description = "A from-scratch, zero-dependency text-mode HTML browser and CSS query engine."
+description = "Robust HTML parser and CSS selector engine. Won't crash on bad HTML."
 repository = "https://github.com/MerlijnW70/mission"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
