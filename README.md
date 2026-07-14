@@ -123,7 +123,8 @@ Turns HTML into a DOM (`Vec<Node>`, where a `Node` is `Text` or `Element { tag, 
   already have; it does not fetch. This keeps the attack surface small and the layers independent
   (network ⊥ renderer, parser ⊥ network).
 - **Robust against hostile input.** Depth caps and bounded work guard against adversarial HTML; the
-  behaviour is pinned by an extensive test suite.
+  behaviour is pinned by an extensive, **mutation-tested** suite — a green build means the tested
+  behaviour is genuinely exercised, not merely that the code compiles.
 
 ## Library use
 
