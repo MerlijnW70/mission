@@ -1,1 +1,7 @@
 /target
+
+# Maintainer-only mutation-testing tooling — kept LOCAL, never published to this public repo.
+# (Parser mutation coverage is run against this checkout; see RELEASE.md "Mutation testing".)
+/noha.yaml
+/.noha/
+/scripts/
