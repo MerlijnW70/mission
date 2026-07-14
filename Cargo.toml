@@ -1,0 +1,13 @@
+[package]
+name = "mission"
+version = "0.1.0"
+edition = "2024"
+description = "A from-scratch, zero-dependency text-mode HTML browser and CSS query engine."
+repository = "https://github.com/MerlijnW70/mission"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["html", "css-selectors", "parser", "html-to-text", "scraping"]
+categories = ["parser-implementations", "text-processing", "command-line-utilities"]
+
+# This crate has zero runtime dependencies — the table is intentionally empty.
+[dependencies]
