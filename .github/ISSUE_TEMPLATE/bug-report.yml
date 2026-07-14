@@ -1,0 +1,36 @@
+name: "🐛 Bug report"
+description: Something in the Mission parser or CLI behaves incorrectly.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did Mission do instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest HTML input and `mission …` command (or library snippet) that reproduces it.
+      render: shell
+      placeholder: |
+        printf '<a href=/x>hi</a>' | mission - --select 'a' --attr href
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `mission --version`.
+      placeholder: mission 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS / platform
+      placeholder: macOS 14 (arm64) · Ubuntu 24.04 (x86_64) · Windows 11
+    validations:
+      required: false

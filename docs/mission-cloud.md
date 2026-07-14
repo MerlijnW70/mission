@@ -73,8 +73,8 @@ something you have to operate.
 
 Mission Cloud is opening to early-access partners now.
 
-> ### → [Request early access](https://github.com/MerlijnW70/mission/issues/new?title=Mission%20Cloud%20early%20access)
+> ### → [Request early access](https://github.com/MerlijnW70/mission/issues/new?template=mission-cloud-early-access.yml)
 
-<sub>*(Interim signup via GitHub. A dedicated waitlist form is coming — this link will be updated.)*</sub>
+<sub>*(Opens a short GitHub form — takes a minute. A dedicated signup page is coming; this link will be updated.)*</sub>
 
 Prefer to start free? [Install the parser](../README.md) — it's the same engine, and it's yours to keep.

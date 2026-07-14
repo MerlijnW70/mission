@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "☁️ About Mission Cloud"
+    url: https://github.com/MerlijnW70/mission/blob/main/docs/mission-cloud.md
+    about: What the managed platform adds on top of the free parser.
+  - name: "📦 Install the free parser"
+    url: https://github.com/MerlijnW70/mission#-install-in-one-line--no-toolchain-needed
+    about: Mission is free and open source — get started in one line, no toolchain needed.
+  - name: "❓ Questions & ideas"
+    url: https://github.com/MerlijnW70/mission/discussions
+    about: For usage questions and feature ideas, start a discussion.

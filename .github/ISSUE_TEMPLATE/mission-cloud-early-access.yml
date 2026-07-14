@@ -1,0 +1,65 @@
+name: "☁️ Mission Cloud — early access"
+description: Request early access to Mission Cloud, the managed self-healing extraction platform.
+title: "[Mission Cloud] Early access — "
+labels: ["mission-cloud", "early-access"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in **Mission Cloud** — the managed platform built on top of the free
+        Mission parser (self-healing extraction, high-throughput transport, hosted at scale).
+
+        Tell us a little about your extraction needs and we'll be in touch.
+        Prefer to start free? [Install the parser](https://github.com/MerlijnW70/mission#-install-in-one-line--no-toolchain-needed) — same engine, yours to keep.
+  - type: input
+    id: contact
+    attributes:
+      label: Contact email
+      description: Where should we reach you? (Your issue is public — leave this blank and we'll follow up in-thread if you prefer.)
+      placeholder: you@company.com
+    validations:
+      required: false
+  - type: input
+    id: company
+    attributes:
+      label: Company / project
+      placeholder: Acme Inc. — price intelligence
+    validations:
+      required: false
+  - type: dropdown
+    id: volume
+    attributes:
+      label: Roughly how many pages / documents do you extract?
+      options:
+        - Just exploring
+        - Under 10k / month
+        - 10k – 1M / month
+        - 1M – 100M / month
+        - 100M+ / month
+    validations:
+      required: true
+  - type: textarea
+    id: usecase
+    attributes:
+      label: What are you extracting, and what breaks today?
+      description: The more concrete, the better.
+      placeholder: e.g. product prices across 200 retailers; selectors rot on redesigns; we need auto-retry + monitoring.
+    validations:
+      required: true
+  - type: checkboxes
+    id: interests
+    attributes:
+      label: Which capabilities matter most?
+      options:
+        - label: Self-healing extraction (auto-retry + fallback selectors)
+        - label: Strategy escalation + circuit breaking
+        - label: High-throughput binary transport for pipelines
+        - label: Managed / hosted at scale
+        - label: Extraction-health monitoring & observability
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Consent
+      options:
+        - label: I'm OK being contacted about Mission Cloud early access.
+          required: true
