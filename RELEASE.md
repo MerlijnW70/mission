@@ -18,6 +18,21 @@ cargo publish --dry-run          # packages + compiles from the packaged tarball
 
 All green? Continue.
 
+### Mutation testing (maintainers)
+
+The parser is mutation-tested with local, unpublished tooling (`noha.yaml`, `.noha/`, `scripts/` —
+all gitignored). Before a release, run it against this checkout to prove the tested behavior is
+genuinely exercised:
+
+```sh
+noha gate                # certifies the zero-dependency parser leaf crate
+noha prober              # mutation coverage over the gated parser sources
+./scripts/check-sources.ps1     # every src/*.rs is gated or consciously waived
+./scripts/check-boundaries.ps1  # architectural boundaries (parser ⊥ network) hold
+```
+
+Zero surviving mutants is the bar. This runs locally only — it never enters the public repo or CI.
+
 ## 1. Bump the version
 
 Edit `Cargo.toml` → `version = "X.Y.Z"` (semver: patch = fixes, minor = additive, major = breaking).
