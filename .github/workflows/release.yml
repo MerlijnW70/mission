@@ -11,7 +11,19 @@ permissions:
   contents: write
 
 jobs:
+  # Create the GitHub Release first, so the parallel build jobs have something to upload to.
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create the release for this tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --repo "$REPO" --title "$TAG" --notes "Prebuilt mission binaries for $TAG."
+
   binaries:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
