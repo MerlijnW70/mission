@@ -42,7 +42,10 @@ fn initialize_result() -> Value {
         ("capabilities", obj(vec![("tools", obj(vec![]))])),
         (
             "serverInfo",
-            obj(vec![("name", s("mission")), ("version", s(env!("CARGO_PKG_VERSION")))]),
+            obj(vec![
+                ("name", s("mission")),
+                ("version", s(env!("CARGO_PKG_VERSION"))),
+            ]),
         ),
     ])
 }
@@ -59,7 +62,10 @@ fn tools_list_result() -> Value {
                 "Render an HTML document to readable plain text (headings, lists, tables, links).",
                 vec![
                     ("html", html()),
-                    ("width", num_prop("optional column width to wrap the text at")),
+                    (
+                        "width",
+                        num_prop("optional column width to wrap the text at"),
+                    ),
                 ],
                 &["html"],
             ),
@@ -91,7 +97,10 @@ fn tools_list_result() -> Value {
 
 /// Dispatch a `tools/call`: validate params, run the named tool, wrap its text output.
 fn tools_call(id: &Value, params: Option<&Value>) -> String {
-    let name = params.and_then(|p| p.get("name")).and_then(Value::as_str).unwrap_or("");
+    let name = params
+        .and_then(|p| p.get("name"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
     let args = params.and_then(|p| p.get("arguments"));
     match run_tool(name, args) {
         Some(text) => success_response(id, tool_text_result(&text)),
@@ -133,13 +142,26 @@ fn run_tool(name: &str, args: Option<&Value>) -> Option<String> {
 
 /// A `{"jsonrpc":"2.0","id":…,"result":…}` response, serialized.
 fn success_response(id: &Value, result: Value) -> String {
-    obj(vec![("jsonrpc", s("2.0")), ("id", id.clone()), ("result", result)]).to_json()
+    obj(vec![
+        ("jsonrpc", s("2.0")),
+        ("id", id.clone()),
+        ("result", result),
+    ])
+    .to_json()
 }
 
 /// A `{"jsonrpc":"2.0","id":…,"error":{code,message}}` response, serialized.
 fn error_response(id: &Value, code: i64, message: &str) -> String {
-    let error = obj(vec![("code", Value::Number(code as f64)), ("message", s(message))]);
-    obj(vec![("jsonrpc", s("2.0")), ("id", id.clone()), ("error", error)]).to_json()
+    let error = obj(vec![
+        ("code", Value::Number(code as f64)),
+        ("message", s(message)),
+    ]);
+    obj(vec![
+        ("jsonrpc", s("2.0")),
+        ("id", id.clone()),
+        ("error", error),
+    ])
+    .to_json()
 }
 
 /// Wrap plain text as an MCP tool result: `{"content":[{"type":"text","text":…}]}`.
@@ -180,7 +202,10 @@ fn tool(name: &str, description: &str, properties: Vec<(&str, Value)>, required:
             obj(vec![
                 ("type", s("object")),
                 ("properties", obj(properties)),
-                ("required", Value::Array(required.iter().map(|r| s(r)).collect())),
+                (
+                    "required",
+                    Value::Array(required.iter().map(|r| s(r)).collect()),
+                ),
             ]),
         ),
     ])
@@ -200,8 +225,17 @@ mod tests {
         let request = format!(
             r#"{{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{{"name":"{tool}","arguments":{arguments}}}}}"#
         );
-        match resp(&request).get("result").unwrap().get("content").unwrap() {
-            Value::Array(items) => items[0].get("text").and_then(Value::as_str).unwrap().to_string(),
+        match resp(&request)
+            .get("result")
+            .unwrap()
+            .get("content")
+            .unwrap()
+        {
+            Value::Array(items) => items[0]
+                .get("text")
+                .and_then(Value::as_str)
+                .unwrap()
+                .to_string(),
             _ => panic!("content was not an array"),
         }
     }
@@ -214,7 +248,10 @@ mod tests {
     fn initialize_reports_protocol_and_server_info() {
         let r = resp(r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#);
         let result = r.get("result").unwrap();
-        assert_eq!(result.get("protocolVersion").and_then(Value::as_str), Some(PROTOCOL_VERSION));
+        assert_eq!(
+            result.get("protocolVersion").and_then(Value::as_str),
+            Some(PROTOCOL_VERSION)
+        );
         let info = result.get("serverInfo").unwrap();
         assert_eq!(info.get("name").and_then(Value::as_str), Some("mission"));
         assert!(info.get("version").and_then(Value::as_str).is_some());
@@ -222,7 +259,10 @@ mod tests {
 
     #[test]
     fn a_notification_gets_no_response() {
-        assert_eq!(handle(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#), None);
+        assert_eq!(
+            handle(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#),
+            None
+        );
     }
 
     #[test]
@@ -236,13 +276,18 @@ mod tests {
             Value::Array(a) => a.clone(),
             _ => panic!("tools was not an array"),
         };
-        let names: Vec<&str> =
-            tools.iter().filter_map(|t| t.get("name").and_then(Value::as_str)).collect();
+        let names: Vec<&str> = tools
+            .iter()
+            .filter_map(|t| t.get("name").and_then(Value::as_str))
+            .collect();
         assert_eq!(names, ["render", "select", "select_text", "attributes"]);
         // Each tool carries an object input schema.
         for t in &tools {
             assert_eq!(
-                t.get("inputSchema").unwrap().get("type").and_then(Value::as_str),
+                t.get("inputSchema")
+                    .unwrap()
+                    .get("type")
+                    .and_then(Value::as_str),
                 Some("object")
             );
         }
@@ -250,27 +295,45 @@ mod tests {
 
     #[test]
     fn render_tool_returns_rendered_text() {
-        assert_eq!(call("render", r#"{"html":"<h1>Hi</h1><p>a <b>b</b></p>"}"#), "# Hi\na *b*");
+        assert_eq!(
+            call("render", r#"{"html":"<h1>Hi</h1><p>a <b>b</b></p>"}"#),
+            "# Hi\na *b*"
+        );
     }
 
     #[test]
     fn render_tool_honors_a_width_at_least_one_and_ignores_smaller() {
-        assert_eq!(call("render", r#"{"html":"<p>a b c</p>","width":1}"#), "a\nb\nc");
+        assert_eq!(
+            call("render", r#"{"html":"<p>a b c</p>","width":1}"#),
+            "a\nb\nc"
+        );
         // width below 1 falls back to unwrapped rendering (pins the `w >= 1.0` guard).
-        assert_eq!(call("render", r#"{"html":"<p>a b c</p>","width":0}"#), "a b c");
+        assert_eq!(
+            call("render", r#"{"html":"<p>a b c</p>","width":0}"#),
+            "a b c"
+        );
     }
 
     #[test]
     fn select_tool_returns_element_json() {
         assert_eq!(
-            call("select", r#"{"html":"<a href=\"/x\">go</a>","selector":"a"}"#),
+            call(
+                "select",
+                r#"{"html":"<a href=\"/x\">go</a>","selector":"a"}"#
+            ),
             r#"[{"tag":"a","attrs":{"href":"/x"},"text":"go"}]"#
         );
     }
 
     #[test]
     fn select_text_tool_renders_each_match() {
-        assert_eq!(call("select_text", r#"{"html":"<p>x</p><p>y</p>","selector":"p"}"#), "x\ny");
+        assert_eq!(
+            call(
+                "select_text",
+                r#"{"html":"<p>x</p><p>y</p>","selector":"p"}"#
+            ),
+            "x\ny"
+        );
     }
 
     #[test]
@@ -286,7 +349,10 @@ mod tests {
 
     #[test]
     fn an_unknown_method_is_method_not_found() {
-        assert_eq!(error_code(&resp(r#"{"jsonrpc":"2.0","id":1,"method":"nope"}"#)), Some(-32601.0));
+        assert_eq!(
+            error_code(&resp(r#"{"jsonrpc":"2.0","id":1,"method":"nope"}"#)),
+            Some(-32601.0)
+        );
     }
 
     #[test]

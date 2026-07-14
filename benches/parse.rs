@@ -55,25 +55,41 @@ fn measure(bytes: usize, mut f: impl FnMut()) -> (f64, f64) {
 
 fn main() {
     println!("mission throughput — parse / select / render (best of 8, single core)\n");
-    println!("  {:<8} {:>8}  {:<18} {:>10} {:>12}", "size", "bytes", "stage", "ms/op", "MB/s");
-    for (name, target) in [("small", 4_000usize), ("medium", 64_000), ("large", 1_000_000)] {
+    println!(
+        "  {:<8} {:>8}  {:<18} {:>10} {:>12}",
+        "size", "bytes", "stage", "ms/op", "MB/s"
+    );
+    for (name, target) in [
+        ("small", 4_000usize),
+        ("medium", 64_000),
+        ("large", 1_000_000),
+    ] {
         let html = document(target);
         let bytes = html.len();
 
         let (ms, mbps) = measure(bytes, || {
             black_box(parse(black_box(&html)));
         });
-        println!("  {name:<8} {bytes:>8}  {:<18} {ms:>10.3} {mbps:>12.0}", "parse");
+        println!(
+            "  {name:<8} {bytes:>8}  {:<18} {ms:>10.3} {mbps:>12.0}",
+            "parse"
+        );
 
         let dom = parse(&html);
         let (ms, mbps) = measure(bytes, || {
             black_box(select(black_box(&dom), "a[href]"));
         });
-        println!("  {name:<8} {bytes:>8}  {:<18} {ms:>10.3} {mbps:>12.0}", "select a[href]");
+        println!(
+            "  {name:<8} {bytes:>8}  {:<18} {ms:>10.3} {mbps:>12.0}",
+            "select a[href]"
+        );
 
         let (ms, mbps) = measure(bytes, || {
             black_box(render_text(black_box(&dom)));
         });
-        println!("  {name:<8} {bytes:>8}  {:<18} {ms:>10.3} {mbps:>12.0}", "render_text");
+        println!(
+            "  {name:<8} {bytes:>8}  {:<18} {ms:>10.3} {mbps:>12.0}",
+            "render_text"
+        );
     }
 }

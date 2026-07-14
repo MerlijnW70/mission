@@ -199,7 +199,10 @@ pub fn filter_line(line: &str) -> String {
 /// A `{"error":"…"}` response line, with `message` JSON-escaped (routed through [`Value::String`]
 /// so the escaping is the same battle-tested path the serializers use).
 fn filter_error(message: &str) -> String {
-    format!("{{\"error\":{}}}", Value::String(message.to_string()).to_json())
+    format!(
+        "{{\"error\":{}}}",
+        Value::String(message.to_string()).to_json()
+    )
 }
 
 /// Pretty-print a selection: an indented JSON array, one object per line.
@@ -357,7 +360,10 @@ mod tests {
 
     #[test]
     fn positionals_are_collected_in_order() {
-        assert_eq!(parse_args(&args(&["a.html", "b.html"])).paths, vec!["a.html", "b.html"]);
+        assert_eq!(
+            parse_args(&args(&["a.html", "b.html"])).paths,
+            vec!["a.html", "b.html"]
+        );
     }
 
     #[test]
@@ -450,14 +456,23 @@ mod tests {
     fn width_wraps_the_rendered_document() {
         // With --width set, the whole-document render goes through render_text_wrapped.
         let dom = parse("<p>the quick brown fox jumps</p>");
-        let config = Config { width: Some(9), ..Config::default() };
-        assert_eq!(output(&config, &dom), format!("{}\n", render_text_wrapped(&dom, 9)));
+        let config = Config {
+            width: Some(9),
+            ..Config::default()
+        };
+        assert_eq!(
+            output(&config, &dom),
+            format!("{}\n", render_text_wrapped(&dom, 9))
+        );
     }
 
     #[test]
     fn selector_text_mode_renders_each_match_on_its_own_line() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            ..Config::default()
+        };
         let a = render_text(std::slice::from_ref(&dom[0]));
         let b = render_text(std::slice::from_ref(&dom[1]));
         // Per-node rendering with a trailing newline each; a `&nodes`-at-once mutant would differ.
@@ -469,7 +484,10 @@ mod tests {
         // The streaming contract: two matches produce two separate records (each its own flushed
         // line), not one concatenated blob. Kills a mutant that renders all nodes into one record.
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            ..Config::default()
+        };
         let (rec, outcome) = run_rec(&config, &dom);
         assert_eq!(outcome, Outcome::Done);
         assert_eq!(rec.records, vec!["go [/x]\n", "back [/y]\n"]);
@@ -478,7 +496,11 @@ mod tests {
     #[test]
     fn attr_text_mode_prints_one_value_per_line() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), attr: Some("href"), ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            attr: Some("href"),
+            ..Config::default()
+        };
         assert_eq!(output(&config, &dom), "/x\n/y\n".to_string());
     }
 
@@ -486,7 +508,11 @@ mod tests {
     fn attr_text_mode_streams_one_record_per_value() {
         // One value per record, so each attribute streams out on its own flushed line.
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), attr: Some("href"), ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            attr: Some("href"),
+            ..Config::default()
+        };
         let (rec, _) = run_rec(&config, &dom);
         assert_eq!(rec.records, vec!["/x\n", "/y\n"]);
     }
@@ -494,18 +520,29 @@ mod tests {
     #[test]
     fn attr_json_mode_emits_a_json_array_of_values() {
         let dom = parse(LINKS);
-        let config =
-            Config { selector: Some("a"), attr: Some("href"), as_json: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            attr: Some("href"),
+            as_json: true,
+            ..Config::default()
+        };
         assert_eq!(output(&config, &dom), "[\"/x\",\"/y\"]\n".to_string());
     }
 
     #[test]
     fn selection_json_mode_emits_element_objects() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), as_json: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            as_json: true,
+            ..Config::default()
+        };
         let nodes = select(&dom, "a");
         // Kills a mutant that routes JSON output through the attr branch or the text branch.
-        assert_eq!(output(&config, &dom), format!("{}\n", json::selection(&nodes)));
+        assert_eq!(
+            output(&config, &dom),
+            format!("{}\n", json::selection(&nodes))
+        );
     }
 
     #[test]
@@ -513,7 +550,11 @@ mod tests {
         // Contrast with the streaming modes: a JSON array is one value, so it must be emitted as a
         // single record (splitting it per element would produce invalid JSON on the wire).
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), as_json: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            as_json: true,
+            ..Config::default()
+        };
         let (rec, _) = run_rec(&config, &dom);
         assert_eq!(rec.records.len(), 1);
     }
@@ -521,14 +562,22 @@ mod tests {
     #[test]
     fn count_reports_the_number_of_matches() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), count: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            count: true,
+            ..Config::default()
+        };
         assert_eq!(output(&config, &dom), "2\n".to_string());
     }
 
     #[test]
     fn jsonl_emits_one_object_per_line() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), jsonl: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            jsonl: true,
+            ..Config::default()
+        };
         let nodes = select(&dom, "a");
         let expected = format!("{}\n{}\n", json::object(nodes[0]), json::object(nodes[1]));
         assert_eq!(output(&config, &dom), expected);
@@ -539,21 +588,36 @@ mod tests {
         // NDJSON's whole point: each object is its own record, flushed on its own line — so an agent
         // reading the pipe sees the first match without waiting for the rest.
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), jsonl: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            jsonl: true,
+            ..Config::default()
+        };
         let nodes = select(&dom, "a");
         let (rec, _) = run_rec(&config, &dom);
         assert_eq!(
             rec.records,
-            vec![format!("{}\n", json::object(nodes[0])), format!("{}\n", json::object(nodes[1]))]
+            vec![
+                format!("{}\n", json::object(nodes[0])),
+                format!("{}\n", json::object(nodes[1]))
+            ]
         );
     }
 
     #[test]
     fn pretty_emits_an_indented_array() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), pretty: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            pretty: true,
+            ..Config::default()
+        };
         let nodes = select(&dom, "a");
-        let expected = format!("[\n  {},\n  {}\n]\n", json::object(nodes[0]), json::object(nodes[1]));
+        let expected = format!(
+            "[\n  {},\n  {}\n]\n",
+            json::object(nodes[0]),
+            json::object(nodes[1])
+        );
         assert_eq!(output(&config, &dom), expected);
     }
 
@@ -561,7 +625,11 @@ mod tests {
     fn pretty_of_an_empty_selection_is_an_empty_array() {
         // Pins the empty-nodes branch of pretty_selection.
         let dom = parse(LINKS);
-        let config = Config { selector: Some("h1"), pretty: true, ..Config::default() };
+        let config = Config {
+            selector: Some("h1"),
+            pretty: true,
+            ..Config::default()
+        };
         assert_eq!(output(&config, &dom), "[]\n".to_string());
     }
 
@@ -569,14 +637,22 @@ mod tests {
     fn attr_extraction_skips_nodes_without_the_attribute() {
         // Only the anchor carries `href`; the `filter_map` must drop the <p>.
         let dom = parse("<a href=\"/x\">go</a><p>plain</p>");
-        let config = Config { selector: Some("*"), attr: Some("href"), ..Config::default() };
+        let config = Config {
+            selector: Some("*"),
+            attr: Some("href"),
+            ..Config::default()
+        };
         assert_eq!(output(&config, &dom), "/x\n".to_string());
     }
 
     #[test]
     fn fail_on_empty_fails_when_a_selector_matches_nothing() {
         let dom = parse(LINKS);
-        let config = Config { selector: Some("h1"), fail_on_empty: true, ..Config::default() };
+        let config = Config {
+            selector: Some("h1"),
+            fail_on_empty: true,
+            ..Config::default()
+        };
         let (rec, outcome) = run_rec(&config, &dom);
         assert_eq!(outcome, Outcome::FailOnEmpty);
         // A fail signal emits nothing: no half-written record precedes the stderr report.
@@ -587,7 +663,10 @@ mod tests {
     fn fail_on_empty_is_inert_without_the_flag() {
         // Same empty match, but the flag is off: pins the `&& config.fail_on_empty` conjunct.
         let dom = parse(LINKS);
-        let config = Config { selector: Some("h1"), ..Config::default() };
+        let config = Config {
+            selector: Some("h1"),
+            ..Config::default()
+        };
         let (rec, outcome) = run_rec(&config, &dom);
         assert_eq!(outcome, Outcome::Done);
         // An empty selector match under text mode emits no records at all.
@@ -598,7 +677,11 @@ mod tests {
     fn a_matching_selector_never_fails_on_empty() {
         // Non-empty match with the flag on: pins the `nodes.is_empty()` conjunct (and `&&`→`||`).
         let dom = parse(LINKS);
-        let config = Config { selector: Some("a"), fail_on_empty: true, ..Config::default() };
+        let config = Config {
+            selector: Some("a"),
+            fail_on_empty: true,
+            ..Config::default()
+        };
         let a = render_text(std::slice::from_ref(&dom[0]));
         let b = render_text(std::slice::from_ref(&dom[1]));
         assert_eq!(output(&config, &dom), format!("{a}\n{b}\n"));
@@ -610,7 +693,10 @@ mod tests {
         // from failing (it renders the empty document instead). Kills `is_some()`→true and the
         // first `&&`→`||`.
         let dom = parse("");
-        let config = Config { fail_on_empty: true, ..Config::default() };
+        let config = Config {
+            fail_on_empty: true,
+            ..Config::default()
+        };
         assert_eq!(output(&config, &dom), format!("{}\n", render_text(&dom)));
     }
 
@@ -630,7 +716,10 @@ mod tests {
     fn filter_line_reports_an_empty_match_as_an_empty_array() {
         // A selector that matches nothing is not an error — it is an empty result set. Pins the
         // success branch as distinct from the error branches.
-        assert_eq!(filter_line(r#"{"html":"<p>x</p>","selector":"a"}"#), r#"{"matches":[]}"#);
+        assert_eq!(
+            filter_line(r#"{"html":"<p>x</p>","selector":"a"}"#),
+            r#"{"matches":[]}"#
+        );
     }
 
     #[test]
@@ -643,8 +732,14 @@ mod tests {
     fn filter_line_requires_an_html_string() {
         // Missing entirely, and present-but-not-a-string, both take the missing-html branch (a
         // number's `as_str()` is None) — pins that branch and its message.
-        assert_eq!(filter_line(r#"{"selector":"a"}"#), r#"{"error":"missing \"html\" string"}"#);
-        assert_eq!(filter_line(r#"{"html":5,"selector":"a"}"#), r#"{"error":"missing \"html\" string"}"#);
+        assert_eq!(
+            filter_line(r#"{"selector":"a"}"#),
+            r#"{"error":"missing \"html\" string"}"#
+        );
+        assert_eq!(
+            filter_line(r#"{"html":5,"selector":"a"}"#),
+            r#"{"error":"missing \"html\" string"}"#
+        );
     }
 
     #[test]
@@ -661,7 +756,10 @@ mod tests {
     fn filter_line_escapes_control_characters_in_its_error() {
         // The error message is routed through the JSON string escaper, so a job that is valid JSON
         // but the wrong shape still yields a valid JSON error line. Here a bare array has no "html".
-        assert_eq!(filter_line("[1,2]"), r#"{"error":"missing \"html\" string"}"#);
+        assert_eq!(
+            filter_line("[1,2]"),
+            r#"{"error":"missing \"html\" string"}"#
+        );
     }
 
     // --- StdoutSink / run_filter (the streaming I/O logic moved out of the thin main) ----------
@@ -723,11 +821,17 @@ mod tests {
         // The latch must SHORT-CIRCUIT later records, not just survive them: after the first write
         // fails, the second record is dropped even though the underlying writer would now accept it.
         // Pins the `if self.broken { return }` guard — without it, "second" would reach the buffer.
-        let mut sink = StdoutSink::new(FailOnceWriter { failed: false, buf: Vec::new() });
+        let mut sink = StdoutSink::new(FailOnceWriter {
+            failed: false,
+            buf: Vec::new(),
+        });
         sink.record("first"); // fails, latches broken
         sink.record("second"); // must be dropped by the latch, not retried
         assert!(sink.is_broken());
-        assert!(sink.out.buf.is_empty(), "a latched-broken sink must not write later records");
+        assert!(
+            sink.out.buf.is_empty(),
+            "a latched-broken sink must not write later records"
+        );
     }
 
     #[test]

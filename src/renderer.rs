@@ -63,7 +63,11 @@ fn collect_text<'a, I: IntoIterator<Item = &'a Node>>(tree: I, out: &mut String,
                     out.push_str(&collapse_spaces(t));
                 }
             }
-            Node::Element { tag, attrs, children } => {
+            Node::Element {
+                tag,
+                attrs,
+                children,
+            } => {
                 if tag == "head" || tag == "title" || tag == "template" {
                     // Metadata (<head>, <title>) and inert <template> content are parsed (so they
                     // remain queryable) but never rendered as body text.
@@ -241,7 +245,10 @@ fn heading_level(tag: &str) -> Option<u32> {
 fn collect_list(tag: &str, children: &[Node], out: &mut String, depth: usize) {
     let ordered = tag == "ol";
     let mut number = 0u32;
-    let inner = Ctx { pre: false, list_depth: depth + 1 };
+    let inner = Ctx {
+        pre: false,
+        list_depth: depth + 1,
+    };
     out.push('\n'); // the list is a block
     for child in children {
         if child.tag() == Some("li") {
@@ -357,8 +364,8 @@ fn escape_pre(text: &str) -> String {
             ' ' => out.push(PRE_SPACE),
             '\n' => out.push(PRE_NEWLINE),
             '\t' => out.push(PRE_TAB),
-            '\r' => {}                     // CR is dropped; the '\n' carries the line break
-            _ if is_pre_marker(c) => {}    // reserved: never let a source marker survive
+            '\r' => {}                  // CR is dropped; the '\n' carries the line break
+            _ if is_pre_marker(c) => {} // reserved: never let a source marker survive
             _ if is_collapsible_ws(c) => out.push(PRE_SPACE), // (nbsp falls through, kept verbatim)
             _ => out.push(c),
         }
@@ -390,7 +397,7 @@ fn normalize(raw: &str) -> String {
     for c in raw.chars() {
         if is_collapsible_ws(c) {
             match out.as_bytes().last() {
-                None => {}                                        // leading whitespace: drop it
+                None => {} // leading whitespace: drop it
                 Some(b' ') if c == '\n' => {
                     out.pop(); // a block newline outranks a pending space
                     out.push('\n');
@@ -414,7 +421,11 @@ mod tests {
     use crate::parser::Node::{Element, Text};
 
     fn elem(tag: &str, children: Vec<Node>) -> Node {
-        Element { tag: tag.into(), attrs: vec![], children }
+        Element {
+            tag: tag.into(),
+            attrs: vec![],
+            children,
+        }
     }
 
     #[test]
@@ -494,18 +505,29 @@ mod tests {
     }
 
     fn link(href: &str, children: Vec<Node>) -> Node {
-        Element { tag: "a".into(), attrs: vec![("href".into(), href.into())], children }
+        Element {
+            tag: "a".into(),
+            attrs: vec![("href".into(), href.into())],
+            children,
+        }
     }
 
     #[test]
     fn a_hyperlink_shows_its_destination() {
         // Pins the link branch and its push_str/push calls.
-        assert_eq!(render_text(&[link("/about", vec![Text("docs".into())])]), "docs [/about]");
+        assert_eq!(
+            render_text(&[link("/about", vec![Text("docs".into())])]),
+            "docs [/about]"
+        );
     }
 
     #[test]
     fn an_anchor_without_href_shows_only_its_text() {
-        let anchor = Element { tag: "a".into(), attrs: vec![], children: vec![Text("x".into())] };
+        let anchor = Element {
+            tag: "a".into(),
+            attrs: vec![],
+            children: vec![Text("x".into())],
+        };
         assert_eq!(render_text(&[anchor]), "x");
     }
 
@@ -530,7 +552,10 @@ mod tests {
 
     #[test]
     fn runs_of_spaces_in_text_collapse_to_one() {
-        assert_eq!(render_text(&[elem("p", vec![Text("a     b".into())])]), "a b");
+        assert_eq!(
+            render_text(&[elem("p", vec![Text("a     b".into())])]),
+            "a b"
+        );
     }
 
     #[test]
@@ -541,7 +566,10 @@ mod tests {
 
     #[test]
     fn leading_and_trailing_text_whitespace_is_trimmed() {
-        assert_eq!(render_text(&[elem("p", vec![Text("   hi   ".into())])]), "hi");
+        assert_eq!(
+            render_text(&[elem("p", vec![Text("   hi   ".into())])]),
+            "hi"
+        );
     }
 
     #[test]
@@ -571,7 +599,10 @@ mod tests {
     fn an_unordered_list_marks_each_item_with_a_bullet() {
         let tree = vec![elem(
             "ul",
-            vec![elem("li", vec![Text("a".into())]), elem("li", vec![Text("b".into())])],
+            vec![
+                elem("li", vec![Text("a".into())]),
+                elem("li", vec![Text("b".into())]),
+            ],
         )];
         assert_eq!(render_text(&tree), "• a\n• b");
     }
@@ -630,15 +661,27 @@ mod tests {
     #[test]
     fn a_heading_is_marked_by_its_level() {
         // Pins heading_level and the '#'-count loop across the range's bounds.
-        assert_eq!(render_text(&[elem("h1", vec![Text("Title".into())])]), "# Title");
-        assert_eq!(render_text(&[elem("h3", vec![Text("Sub".into())])]), "### Sub");
-        assert_eq!(render_text(&[elem("h6", vec![Text("Deep".into())])]), "###### Deep");
+        assert_eq!(
+            render_text(&[elem("h1", vec![Text("Title".into())])]),
+            "# Title"
+        );
+        assert_eq!(
+            render_text(&[elem("h3", vec![Text("Sub".into())])]),
+            "### Sub"
+        );
+        assert_eq!(
+            render_text(&[elem("h6", vec![Text("Deep".into())])]),
+            "###### Deep"
+        );
     }
 
     #[test]
     fn bold_elements_are_wrapped_in_asterisks() {
         assert_eq!(render_text(&[elem("b", vec![Text("x".into())])]), "*x*");
-        assert_eq!(render_text(&[elem("strong", vec![Text("y".into())])]), "*y*");
+        assert_eq!(
+            render_text(&[elem("strong", vec![Text("y".into())])]),
+            "*y*"
+        );
     }
 
     #[test]
@@ -652,7 +695,11 @@ mod tests {
     fn emphasis_flows_inline_within_a_sentence() {
         let tree = vec![elem(
             "p",
-            vec![Text("a ".into()), elem("b", vec![Text("bold".into())]), Text(" c".into())],
+            vec![
+                Text("a ".into()),
+                elem("b", vec![Text("bold".into())]),
+                Text(" c".into()),
+            ],
         )];
         assert_eq!(render_text(&tree), "a *bold* c");
     }
@@ -680,7 +727,10 @@ mod tests {
     fn a_blockquote_prefixes_each_line() {
         let tree = vec![elem(
             "blockquote",
-            vec![elem("p", vec![Text("a".into())]), elem("p", vec![Text("b".into())])],
+            vec![
+                elem("p", vec![Text("a".into())]),
+                elem("p", vec![Text("b".into())]),
+            ],
         )];
         assert_eq!(render_text(&tree), "> a\n> b");
     }
@@ -709,7 +759,10 @@ mod tests {
         // Pins the `first` flag (separator only between cells) and the td/th cell test.
         let tree = vec![elem(
             "tr",
-            vec![elem("td", vec![Text("a".into())]), elem("th", vec![Text("b".into())])],
+            vec![
+                elem("td", vec![Text("a".into())]),
+                elem("th", vec![Text("b".into())]),
+            ],
         )];
         assert_eq!(render_text(&tree), "a | b");
     }
@@ -733,8 +786,20 @@ mod tests {
         let tree = vec![elem(
             "table",
             vec![
-                elem("tr", vec![elem("td", vec![Text("a".into())]), elem("td", vec![Text("b".into())])]),
-                elem("tr", vec![elem("td", vec![Text("c".into())]), elem("td", vec![Text("d".into())])]),
+                elem(
+                    "tr",
+                    vec![
+                        elem("td", vec![Text("a".into())]),
+                        elem("td", vec![Text("b".into())]),
+                    ],
+                ),
+                elem(
+                    "tr",
+                    vec![
+                        elem("td", vec![Text("c".into())]),
+                        elem("td", vec![Text("d".into())]),
+                    ],
+                ),
             ],
         )];
         assert_eq!(render_text(&tree), "a | b\nc | d");
@@ -744,25 +809,38 @@ mod tests {
     fn pre_preserves_runs_of_spaces() {
         // Pins the `pre` flag on the <pre> branch and the space marker round-trip: outside <pre>
         // this would collapse to "a b".
-        assert_eq!(render_text(&[elem("pre", vec![Text("a   b".into())])]), "a   b");
+        assert_eq!(
+            render_text(&[elem("pre", vec![Text("a   b".into())])]),
+            "a   b"
+        );
     }
 
     #[test]
     fn pre_preserves_newlines() {
         // A source newline inside <pre> is a real line break, not inter-word spacing.
-        assert_eq!(render_text(&[elem("pre", vec![Text("a\nb".into())])]), "a\nb");
+        assert_eq!(
+            render_text(&[elem("pre", vec![Text("a\nb".into())])]),
+            "a\nb"
+        );
     }
 
     #[test]
     fn pre_preserves_tabs() {
         // The tab marker is distinct from the space marker, so a tab survives as a tab.
-        assert_eq!(render_text(&[elem("pre", vec![Text("a\tb".into())])]), "a\tb");
+        assert_eq!(
+            render_text(&[elem("pre", vec![Text("a\tb".into())])]),
+            "a\tb"
+        );
     }
 
     #[test]
     fn pre_is_a_block() {
         // Pins the two boundary newlines around the <pre> branch.
-        let tree = vec![Text("x".into()), elem("pre", vec![Text("y".into())]), Text("z".into())];
+        let tree = vec![
+            Text("x".into()),
+            elem("pre", vec![Text("y".into())]),
+            Text("z".into()),
+        ];
         assert_eq!(render_text(&tree), "x\ny\nz");
     }
 
@@ -780,19 +858,28 @@ mod tests {
     #[test]
     fn pre_drops_carriage_returns() {
         // Pins the `'\r' => {}` arm: the '\n' carries the break, so "a\r\nb" is "a\nb", not "a \nb".
-        assert_eq!(render_text(&[elem("pre", vec![Text("a\r\nb".into())])]), "a\nb");
+        assert_eq!(
+            render_text(&[elem("pre", vec![Text("a\r\nb".into())])]),
+            "a\nb"
+        );
     }
 
     #[test]
     fn pre_maps_other_whitespace_to_a_space() {
         // A vertical tab is whitespace but not one of the kept forms, so it becomes a space.
-        assert_eq!(render_text(&[elem("pre", vec![Text("a\u{b}b".into())])]), "a b");
+        assert_eq!(
+            render_text(&[elem("pre", vec![Text("a\u{b}b".into())])]),
+            "a b"
+        );
     }
 
     #[test]
     fn pre_strips_a_reserved_marker_from_source() {
         // A marker char present in the source must not survive to be decoded back into whitespace.
-        assert_eq!(render_text(&[elem("pre", vec![Text("a\u{1}b".into())])]), "ab");
+        assert_eq!(
+            render_text(&[elem("pre", vec![Text("a\u{1}b".into())])]),
+            "ab"
+        );
     }
 
     #[test]
@@ -805,14 +892,20 @@ mod tests {
     #[test]
     fn outside_pre_whitespace_still_collapses() {
         // Contrast with the <pre> cases: a normal block collapses its whitespace as before.
-        assert_eq!(render_text(&[elem("div", vec![Text("a   b".into())])]), "a b");
+        assert_eq!(
+            render_text(&[elem("div", vec![Text("a   b".into())])]),
+            "a b"
+        );
     }
 
     #[test]
     fn a_blockquote_body_is_not_preformatted() {
         // Pins the non-preformatted context passed into the blockquote body: its whitespace
         // collapses, so "a   b" is "> a b" (a preformatted body would keep the run).
-        assert_eq!(render_text(&[elem("blockquote", vec![Text("a   b".into())])]), "> a b");
+        assert_eq!(
+            render_text(&[elem("blockquote", vec![Text("a   b".into())])]),
+            "> a b"
+        );
     }
 
     #[test]
@@ -858,7 +951,13 @@ mod tests {
         let tree = vec![elem(
             "tr",
             vec![
-                elem("td", vec![elem("p", vec![Text("a".into())]), elem("p", vec![Text("b".into())])]),
+                elem(
+                    "td",
+                    vec![
+                        elem("p", vec![Text("a".into())]),
+                        elem("p", vec![Text("b".into())]),
+                    ],
+                ),
                 elem("td", vec![Text("c".into())]),
             ],
         )];
@@ -885,7 +984,10 @@ mod tests {
     fn elem_attrs(tag: &str, attrs: &[(&str, &str)], children: Vec<Node>) -> Node {
         Element {
             tag: tag.into(),
-            attrs: attrs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+            attrs: attrs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
             children,
         }
     }
@@ -904,7 +1006,10 @@ mod tests {
 
     #[test]
     fn an_image_renders_its_alt_text_in_brackets() {
-        assert_eq!(render_text(&[elem_attrs("img", &[("alt", "a cat")], vec![])]), "[a cat]");
+        assert_eq!(
+            render_text(&[elem_attrs("img", &[("alt", "a cat")], vec![])]),
+            "[a cat]"
+        );
     }
 
     #[test]
@@ -915,7 +1020,10 @@ mod tests {
 
     #[test]
     fn inline_code_is_wrapped_in_backticks() {
-        assert_eq!(render_text(&[elem("code", vec![Text("x=1".into())])]), "`x=1`");
+        assert_eq!(
+            render_text(&[elem("code", vec![Text("x=1".into())])]),
+            "`x=1`"
+        );
     }
 
     #[test]
@@ -924,7 +1032,10 @@ mod tests {
         assert_eq!(render_text(&[elem("sup", vec![Text("2".into())])]), "^2^");
         assert_eq!(render_text(&[elem("del", vec![Text("o".into())])]), "~~o~~");
         assert_eq!(render_text(&[elem("s", vec![Text("o".into())])]), "~~o~~");
-        assert_eq!(render_text(&[elem("strike", vec![Text("o".into())])]), "~~o~~");
+        assert_eq!(
+            render_text(&[elem("strike", vec![Text("o".into())])]),
+            "~~o~~"
+        );
         assert_eq!(render_text(&[elem("ins", vec![Text("n".into())])]), "++n++");
     }
 
@@ -962,7 +1073,10 @@ mod tests {
     #[test]
     fn wrap_lines_does_not_split_a_word_longer_than_the_width() {
         // A single over-long word overflows the line rather than being broken mid-word.
-        assert_eq!(wrap_lines("supercalifragilistic go", 5), "supercalifragilistic\ngo");
+        assert_eq!(
+            wrap_lines("supercalifragilistic go", 5),
+            "supercalifragilistic\ngo"
+        );
     }
 
     #[test]
@@ -987,31 +1101,47 @@ mod tests {
     #[test]
     fn a_link_url_strips_reserved_markers() {
         // A decoded control char in href (here U+0002) must not leak — href is written raw.
-        let tree = vec![elem_attrs("a", &[("href", "a\u{2}b")], vec![Text("L".into())])];
+        let tree = vec![elem_attrs(
+            "a",
+            &[("href", "a\u{2}b")],
+            vec![Text("L".into())],
+        )];
         assert_eq!(render_text(&tree), "L [ab]");
     }
 
     #[test]
     fn a_non_breaking_space_is_preserved_not_collapsed() {
         // U+00A0 is kept verbatim and does not fold with neighbours.
-        assert_eq!(render_text(&[elem("p", vec![Text("a\u{a0}\u{a0}b".into())])]), "a\u{a0}\u{a0}b");
+        assert_eq!(
+            render_text(&[elem("p", vec![Text("a\u{a0}\u{a0}b".into())])]),
+            "a\u{a0}\u{a0}b"
+        );
         // Contrast: ordinary spaces still collapse — pins the `is_whitespace()` half of the guard.
         assert_eq!(render_text(&[elem("p", vec![Text("a  b".into())])]), "a b");
     }
 
     #[test]
     fn a_pre_inside_a_blockquote_prefixes_every_line() {
-        let tree = vec![elem("blockquote", vec![elem("pre", vec![Text("one\ntwo".into())])])];
+        let tree = vec![elem(
+            "blockquote",
+            vec![elem("pre", vec![Text("one\ntwo".into())])],
+        )];
         assert_eq!(render_text(&tree), "> one\n> two");
     }
 
     #[test]
     fn wrap_repeats_a_blockquote_prefix_on_continuation_lines() {
-        assert_eq!(wrap_lines("> alpha beta gamma", 9), "> alpha\n> beta\n> gamma");
+        assert_eq!(
+            wrap_lines("> alpha beta gamma", 9),
+            "> alpha\n> beta\n> gamma"
+        );
     }
 
     #[test]
     fn wrap_repeats_an_indent_prefix_on_continuation_lines() {
-        assert_eq!(wrap_lines("  alpha beta gamma", 9), "  alpha\n  beta\n  gamma");
+        assert_eq!(
+            wrap_lines("  alpha beta gamma", 9),
+            "  alpha\n  beta\n  gamma"
+        );
     }
 }

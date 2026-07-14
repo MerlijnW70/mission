@@ -120,8 +120,13 @@ impl Compound {
     /// their case.
     fn parse(s: &str) -> Compound {
         const MARKERS: [char; 4] = ['.', '#', '[', ':'];
-        let mut compound =
-            Compound { tag: None, id: None, classes: Vec::new(), attrs: Vec::new(), pseudos: Vec::new() };
+        let mut compound = Compound {
+            tag: None,
+            id: None,
+            classes: Vec::new(),
+            attrs: Vec::new(),
+            pseudos: Vec::new(),
+        };
         let split = s.find(MARKERS).unwrap_or(s.len());
         let name = &s[..split];
         if !name.is_empty() && name != "*" {
@@ -135,7 +140,9 @@ impl Compound {
                 rest = rest.get(close + 1..).unwrap_or("");
             } else if marker == b':' {
                 rest = &rest[1..]; // step past ':'
-                let end = rest.find([MARKERS[0], MARKERS[1], MARKERS[2], MARKERS[3], '(']).unwrap_or(rest.len());
+                let end = rest
+                    .find([MARKERS[0], MARKERS[1], MARKERS[2], MARKERS[3], '('])
+                    .unwrap_or(rest.len());
                 // Pseudo-class names are case-insensitive (`:FIRST-CHILD` == `:first-child`), so
                 // lowercase before matching — otherwise a non-lowercase form parses to None and is
                 // silently dropped, making the compound over-match instead of filtering.
@@ -195,7 +202,10 @@ impl Compound {
             // Per Selectors L4, `[att^=""]`/`[att$=""]`/`[att*=""]` with an empty value match
             // nothing — but Rust's starts_with/ends_with/contains("") all return true, so guard it.
             AttrConstraint::Prefix(name, value) => {
-                !value.is_empty() && node.attr(name).is_some_and(|v| v.starts_with(value.as_str()))
+                !value.is_empty()
+                    && node
+                        .attr(name)
+                        .is_some_and(|v| v.starts_with(value.as_str()))
             }
             AttrConstraint::Suffix(name, value) => {
                 !value.is_empty() && node.attr(name).is_some_and(|v| v.ends_with(value.as_str()))
@@ -208,19 +218,26 @@ impl Compound {
             // the whole-token compare naturally.
             AttrConstraint::Includes(name, value) => {
                 !value.is_empty()
-                    && node.attr(name).is_some_and(|v| v.split_whitespace().any(|t| t == value))
+                    && node
+                        .attr(name)
+                        .is_some_and(|v| v.split_whitespace().any(|t| t == value))
             }
             // `[att|=v]`: exactly `v`, or `v` immediately followed by `-`. Stripping the prefix and
             // testing for a leading `-` on the remainder needs no length arithmetic or byte
             // indexing. An empty value degrades to "equals empty, or starts with `-`", the spec
             // behavior of the empty dash-match.
             AttrConstraint::DashMatch(name, value) => node.attr(name).is_some_and(|v| {
-                v == value || v.strip_prefix(value.as_str()).is_some_and(|rest| rest.starts_with('-'))
+                v == value
+                    || v.strip_prefix(value.as_str())
+                        .is_some_and(|rest| rest.starts_with('-'))
             }),
         });
         classes_ok
             && attrs_ok
-            && self.pseudos.iter().all(|pseudo| pseudo.matches(frames, f, idx, &mut *budget))
+            && self
+                .pseudos
+                .iter()
+                .all(|pseudo| pseudo.matches(frames, f, idx, &mut *budget))
     }
 }
 
@@ -234,14 +251,20 @@ impl PseudoClass {
             PseudoClass::First => prev_element(siblings, idx).is_none(),
             PseudoClass::Last => next_element(siblings, idx).is_none(),
             PseudoClass::Nth(nth) => {
-                let position = siblings[..=idx].iter().filter(|n| n.tag().is_some()).count();
+                let position = siblings[..=idx]
+                    .iter()
+                    .filter(|n| n.tag().is_some())
+                    .count();
                 nth.matches_position(position)
             }
             PseudoClass::FirstOfType => prev_of_type(siblings, idx).is_none(),
             PseudoClass::LastOfType => next_of_type(siblings, idx).is_none(),
             PseudoClass::NthOfType(nth) => {
                 let target = siblings[idx].tag();
-                let position = siblings[..=idx].iter().filter(|n| n.tag() == target).count();
+                let position = siblings[..=idx]
+                    .iter()
+                    .filter(|n| n.tag() == target)
+                    .count();
                 nth.matches_position(position)
             }
             PseudoClass::OnlyChild => {
@@ -357,10 +380,17 @@ fn parse_nth(arg: &str) -> Option<Nth> {
                     coeff => coeff.parse().ok()?,
                 };
                 let tail = s[pos + 1..].replace(' ', "");
-                let b = if tail.is_empty() { 0 } else { tail.parse().ok()? };
+                let b = if tail.is_empty() {
+                    0
+                } else {
+                    tail.parse().ok()?
+                };
                 Some(Nth { a, b })
             }
-            None => Some(Nth { a: 0, b: s.parse().ok()? }),
+            None => Some(Nth {
+                a: 0,
+                b: s.parse().ok()?,
+            }),
         },
     }
 }
@@ -417,7 +447,14 @@ fn next_of_type(siblings: &[Node], idx: usize) -> Option<usize> {
 /// match, following each step's combinator. Recursion walks left through the compounds and, per
 /// combinator, up through ancestor frames or sideways to preceding element siblings — with
 /// backtracking for the descendant and general-sibling combinators.
-fn matches_from(steps: &[Step], si: usize, frames: &[Frame], f: usize, idx: usize, budget: &mut u32) -> bool {
+fn matches_from(
+    steps: &[Step],
+    si: usize,
+    frames: &[Frame],
+    f: usize,
+    idx: usize,
+    budget: &mut u32,
+) -> bool {
     // The descendant and general-sibling arms backtrack over every ancestor/left-sibling with no
     // memoization, so a hostile deep/wide tree against a multi-step selector can explore
     // combinatorially many paths. `budget` caps that exploration: it is far above any real
@@ -462,7 +499,10 @@ fn has_scan<'a>(
 ) -> bool {
     for (index, node) in tree.iter().enumerate() {
         if let Node::Element { children, .. } = node {
-            frames.push(Frame { siblings: tree, index });
+            frames.push(Frame {
+                siblings: tree,
+                index,
+            });
             let f = frames.len() - 1;
             let hit = {
                 let fr: &[Frame] = frames;
@@ -509,7 +549,16 @@ fn matches_scoped(
         Combinator::Descendant => ((scope_f + 1)..f)
             .any(|af| matches_scoped(steps, si - 1, frames, af, frames[af].index, scope_f, budget)),
         Combinator::Child => {
-            f > scope_f && matches_scoped(steps, si - 1, frames, f - 1, frames[f - 1].index, scope_f, budget)
+            f > scope_f
+                && matches_scoped(
+                    steps,
+                    si - 1,
+                    frames,
+                    f - 1,
+                    frames[f - 1].index,
+                    scope_f,
+                    budget,
+                )
         }
         Combinator::AdjacentSibling => match prev_element(frames[f].siblings, idx) {
             Some(j) => matches_scoped(steps, si - 1, frames, f, j, scope_f, budget),
@@ -559,8 +608,8 @@ fn count_elements(tree: &[Node]) -> usize {
 /// saturating at `u32::MAX` for absurdly large trees. Shared across the whole tree walk (not reset
 /// per node), so it bounds total matcher work rather than per-node work.
 fn element_budget(tree: &[Node]) -> u32 {
-    let total =
-        MATCH_BUDGET as u64 + (count_elements(tree) as u64).saturating_mul(PER_ELEMENT_BUDGET as u64);
+    let total = MATCH_BUDGET as u64
+        + (count_elements(tree) as u64).saturating_mul(PER_ELEMENT_BUDGET as u64);
     total.min(u32::MAX as u64) as u32
 }
 
@@ -611,7 +660,10 @@ fn parse_complex(s: &str) -> Vec<Step> {
         } else if c.is_whitespace() || c == '>' || c == '+' || c == '~' {
             // A separator: close the pending compound, then note the combinator to the next one.
             if !token.is_empty() {
-                steps.push(Step { combinator, compound: Compound::parse(&token) });
+                steps.push(Step {
+                    combinator,
+                    compound: Compound::parse(&token),
+                });
                 token.clear();
                 combinator = Combinator::Descendant;
             }
@@ -626,7 +678,10 @@ fn parse_complex(s: &str) -> Vec<Step> {
         }
     }
     if !token.is_empty() {
-        steps.push(Step { combinator, compound: Compound::parse(&token) });
+        steps.push(Step {
+            combinator,
+            compound: Compound::parse(&token),
+        });
     }
     steps
 }
@@ -685,7 +740,10 @@ fn select_into<'a>(
 ) {
     for (index, node) in tree.iter().enumerate() {
         if let Node::Element { children, .. } = node {
-            frames.push(Frame { siblings: tree, index });
+            frames.push(Frame {
+                siblings: tree,
+                index,
+            });
             let f = frames.len() - 1;
             // Walking the tree once and pushing a node the first time any selector in the group
             // matches gives document order and no duplicates, whatever the selectors' order. The
@@ -701,7 +759,6 @@ fn select_into<'a>(
         }
     }
 }
-
 
 #[cfg(test)]
 mod selector_tests {
@@ -870,7 +927,9 @@ mod selector_tests {
 
     #[test]
     fn attribute_prefix_suffix_and_substring_operators_match() {
-        let tree = parse("<a href=\"/docs/intro\">a</a><a href=\"pic.png\">b</a><a href=\"/x/api/y\">c</a>");
+        let tree = parse(
+            "<a href=\"/docs/intro\">a</a><a href=\"pic.png\">b</a><a href=\"/x/api/y\">c</a>",
+        );
         assert_eq!(texts(select(&tree, "[href^=\"/docs\"]")), vec!["a"]); // starts with
         assert_eq!(texts(select(&tree, "[href$=\".png\"]")), vec!["b"]); // ends with
         assert_eq!(texts(select(&tree, "[href*=\"api\"]")), vec!["c"]); // contains
@@ -986,8 +1045,14 @@ mod selector_tests {
     fn nth_child_supports_an_plus_b_formulas() {
         let tree = parse("<ul><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li></ul>");
         assert_eq!(texts(select(&tree, "li:nth-child(2n)")), vec!["2", "4"]); // A=2, B=0
-        assert_eq!(texts(select(&tree, "li:nth-child(2n+1)")), vec!["1", "3", "5"]); // A=2, B=1
-        assert_eq!(texts(select(&tree, "li:nth-child(n+3)")), vec!["3", "4", "5"]); // from 3 on
+        assert_eq!(
+            texts(select(&tree, "li:nth-child(2n+1)")),
+            vec!["1", "3", "5"]
+        ); // A=2, B=1
+        assert_eq!(
+            texts(select(&tree, "li:nth-child(n+3)")),
+            vec!["3", "4", "5"]
+        ); // from 3 on
         assert_eq!(texts(select(&tree, "li:nth-child(-n+2)")), vec!["1", "2"]); // first 2
     }
 
@@ -1048,7 +1113,10 @@ mod selector_tests {
         // The list separator must be found at depth 0, past a balanced `(...)`. Pins the paren
         // arm of the depth counter: `:nth-child(1)` and `h1` are two members here.
         let tree = parse("<h1>a</h1><p>b</p><span>c</span>");
-        assert_eq!(texts(select(&tree, "*:not(:nth-child(1), h1)")), vec!["b", "c"]);
+        assert_eq!(
+            texts(select(&tree, "*:not(:nth-child(1), h1)")),
+            vec!["b", "c"]
+        );
     }
 
     #[test]
@@ -1225,7 +1293,10 @@ mod selector_tests {
         // A zero budget must return false regardless of the compound; a fresh budget matches. Pins
         // the `*budget == 0` guard and the decrement (private matcher, called directly).
         let tree = parse("<a>x</a>");
-        let frames = vec![Frame { siblings: &tree, index: 0 }];
+        let frames = vec![Frame {
+            siblings: &tree,
+            index: 0,
+        }];
         let steps = parse_complex("a");
         let mut exhausted = 0u32;
         assert!(!matches_from(&steps, 0, &frames, 0, 0, &mut exhausted));
@@ -1237,11 +1308,20 @@ mod selector_tests {
     #[test]
     fn paren_depth_guard_bounds_recursive_selector_nesting() {
         assert!(!paren_depth_exceeds("a:not(b)", MAX_SELECTOR_NESTING)); // depth 1
-        assert!(!paren_depth_exceeds(&"(".repeat(MAX_SELECTOR_NESTING as usize), MAX_SELECTOR_NESTING));
-        assert!(paren_depth_exceeds(&"(".repeat(MAX_SELECTOR_NESTING as usize + 1), MAX_SELECTOR_NESTING));
+        assert!(!paren_depth_exceeds(
+            &"(".repeat(MAX_SELECTOR_NESTING as usize),
+            MAX_SELECTOR_NESTING
+        ));
+        assert!(paren_depth_exceeds(
+            &"(".repeat(MAX_SELECTOR_NESTING as usize + 1),
+            MAX_SELECTOR_NESTING
+        ));
         // Many flat `()` pairs stay at depth 1 — pins the `)` decrement (without it, depth would
         // accumulate and falsely trip the guard).
-        assert!(!paren_depth_exceeds(&"()".repeat(MAX_SELECTOR_NESTING as usize + 10), MAX_SELECTOR_NESTING));
+        assert!(!paren_depth_exceeds(
+            &"()".repeat(MAX_SELECTOR_NESTING as usize + 10),
+            MAX_SELECTOR_NESTING
+        ));
     }
 
     #[test]
@@ -1304,7 +1384,10 @@ mod selector_tests {
         let tree = parse("<ul><li>1</li><li>2</li><li>3</li></ul>");
         assert_eq!(texts(select(&tree, "li:nth-last-child(1)")), vec!["3"]); // last
         assert_eq!(texts(select(&tree, "li:nth-last-child(2)")), vec!["2"]);
-        assert_eq!(texts(select(&tree, "li:nth-last-child(odd)")), vec!["1", "3"]);
+        assert_eq!(
+            texts(select(&tree, "li:nth-last-child(odd)")),
+            vec!["1", "3"]
+        );
     }
 
     #[test]
@@ -1368,7 +1451,8 @@ mod selector_tests {
     fn has_composes_with_the_tag_and_a_class() {
         // A `.card` that also has an <img> descendant: the plain <div> (no class) and the empty
         // `.card` are both excluded.
-        let tree = parse("<div class=\"card\"><img></div><div><img></div><div class=\"card\">no</div>");
+        let tree =
+            parse("<div class=\"card\"><img></div><div><img></div><div class=\"card\">no</div>");
         assert_eq!(select(&tree, "div.card:has(img)").len(), 1);
     }
 
@@ -1424,10 +1508,18 @@ mod selector_tests {
         // The scoped matcher's budget guard, mirroring matches_from: a zero budget fails closed
         // (no underflow, no match); a fresh budget matches and consumes exactly one step.
         let tree = parse("<div><a>x</a></div>");
-        let Node::Element { children, .. } = &tree[0] else { unreachable!() };
+        let Node::Element { children, .. } = &tree[0] else {
+            unreachable!()
+        };
         let frames = vec![
-            Frame { siblings: &tree, index: 0 },    // <div> — the scope, frame 0
-            Frame { siblings: children, index: 0 }, // <a> — frame 1
+            Frame {
+                siblings: &tree,
+                index: 0,
+            }, // <div> — the scope, frame 0
+            Frame {
+                siblings: children,
+                index: 0,
+            }, // <a> — frame 1
         ];
         let steps = parse_complex("a");
         let mut exhausted = 0u32;
@@ -1443,10 +1535,18 @@ mod selector_tests {
         // recursing below it. Pins the `f > scope_f` guard in the Child arm (a `>=` would underflow
         // the frame index past 0).
         let tree = parse("<a><a>x</a></a>"); // outer <a> (scope, frame 0) > inner <a> (frame 1)
-        let Node::Element { children, .. } = &tree[0] else { unreachable!() };
+        let Node::Element { children, .. } = &tree[0] else {
+            unreachable!()
+        };
         let frames = vec![
-            Frame { siblings: &tree, index: 0 },    // outer <a> — scope, frame 0
-            Frame { siblings: children, index: 0 }, // inner <a> — frame 1
+            Frame {
+                siblings: &tree,
+                index: 0,
+            }, // outer <a> — scope, frame 0
+            Frame {
+                siblings: children,
+                index: 0,
+            }, // inner <a> — frame 1
         ];
         // `a > a > a` is one compound deeper than the two available frames, so the Child recursion
         // reaches the scope frame and must stop there — matching nothing, without panicking.

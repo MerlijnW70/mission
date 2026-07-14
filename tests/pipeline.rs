@@ -29,7 +29,10 @@ fn survives_malformed_markup_without_losing_text() {
 #[test]
 fn decodes_entities_and_shows_link_targets() {
     let html = "<p>Rock &amp; roll &#8212; see <a href=\"/faq\">the FAQ</a></p>";
-    assert_eq!(render_text(&parse(html)), "Rock & roll — see the FAQ [/faq]");
+    assert_eq!(
+        render_text(&parse(html)),
+        "Rock & roll — see the FAQ [/faq]"
+    );
 }
 
 #[test]
@@ -70,7 +73,10 @@ fn indented_multiline_source_renders_as_clean_lines() {
     <p>Some    text
        wrapped across   lines.</p>
 </body>";
-    assert_eq!(render_text(&parse(html)), "# Title\nSome text wrapped across lines.");
+    assert_eq!(
+        render_text(&parse(html)),
+        "# Title\nSome text wrapped across lines."
+    );
 }
 
 #[test]
@@ -80,10 +86,16 @@ fn the_dom_can_be_queried_after_parsing() {
     let dom = parse(html);
 
     // Pull the heading's text out of the tree.
-    assert_eq!(find(&dom, "h1").map(|n| n.text()), Some("Headline".to_string()));
+    assert_eq!(
+        find(&dom, "h1").map(|n| n.text()),
+        Some("Headline".to_string())
+    );
 
     // Collect every link's destination.
-    let hrefs: Vec<&str> = find_all(&dom, "a").iter().filter_map(|n| n.attr("href")).collect();
+    let hrefs: Vec<&str> = find_all(&dom, "a")
+        .iter()
+        .filter_map(|n| n.attr("href"))
+        .collect();
     assert_eq!(hrefs, vec!["/a", "/b"]);
 }
 
@@ -97,8 +109,10 @@ fn a_css_like_selector_extracts_nested_matches() {
     let dom = parse(html);
 
     // Links inside the article only (not the nav link).
-    let article_links: Vec<&str> =
-        select(&dom, "article a").iter().filter_map(|n| n.attr("href")).collect();
+    let article_links: Vec<&str> = select(&dom, "article a")
+        .iter()
+        .filter_map(|n| n.attr("href"))
+        .collect();
     assert_eq!(article_links, vec!["/inline"]);
 
     // Every tagged list item, by class.
@@ -114,12 +128,17 @@ fn child_and_attribute_selectors_target_precisely() {
     let dom = parse(html);
 
     // Direct-child <li> of a <ul>, then any link inside — nav items only, not the footer link.
-    let items: Vec<&str> =
-        select(&dom, "ul > li a[href]").iter().filter_map(|n| n.attr("href")).collect();
+    let items: Vec<&str> = select(&dom, "ul > li a[href]")
+        .iter()
+        .filter_map(|n| n.attr("href"))
+        .collect();
     assert_eq!(items, vec!["/home", "/docs"]);
 
     // An attribute-equals selector pinpoints one link.
-    let docs: Vec<String> = select(&dom, "a[href=\"/docs\"]").iter().map(|n| n.text()).collect();
+    let docs: Vec<String> = select(&dom, "a[href=\"/docs\"]")
+        .iter()
+        .map(|n| n.text())
+        .collect();
     assert_eq!(docs, vec!["Docs"]);
 }
 
@@ -146,12 +165,18 @@ fn structural_pseudo_classes_select_by_position() {
     let dom = parse(html);
 
     // The first cell of every row.
-    let firsts: Vec<String> = select(&dom, "td:first-child").iter().map(|n| n.text()).collect();
+    let firsts: Vec<String> = select(&dom, "td:first-child")
+        .iter()
+        .map(|n| n.text())
+        .collect();
     assert_eq!(firsts, vec!["a1", "b1", "c1"]);
 
     // Odd rows.
     let odd_rows = select(&dom, "tr:nth-child(odd)");
-    assert_eq!(odd_rows.iter().map(|n| n.text()).collect::<Vec<_>>(), vec!["a1a2", "c1c2"]);
+    assert_eq!(
+        odd_rows.iter().map(|n| n.text()).collect::<Vec<_>>(),
+        vec!["a1a2", "c1c2"]
+    );
 }
 
 #[test]
@@ -163,10 +188,16 @@ fn advanced_selectors_pinpoint_elements() {
     let dom = parse(html);
 
     // Every second table row (An+B formula).
-    let even_rows: Vec<String> = select(&dom, "tr:nth-child(2n)").iter().map(|n| n.text()).collect();
+    let even_rows: Vec<String> = select(&dom, "tr:nth-child(2n)")
+        .iter()
+        .map(|n| n.text())
+        .collect();
     assert_eq!(even_rows, vec!["a1a2"]);
 
     // Links whose href starts with /docs (prefix operator).
-    let docs: Vec<String> = select(&dom, "a[href^=\"/docs\"]").iter().map(|n| n.text()).collect();
+    let docs: Vec<String> = select(&dom, "a[href^=\"/docs\"]")
+        .iter()
+        .map(|n| n.text())
+        .collect();
     assert_eq!(docs, vec!["docs"]);
 }

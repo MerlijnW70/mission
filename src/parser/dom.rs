@@ -48,13 +48,23 @@ pub fn parse(input: &str) -> Vec<Node> {
     for token in tokenize(input) {
         match token {
             Token::Text(t) => current_children(&mut stack, &mut roots).push(Node::Text(t)),
-            Token::StartTag { name, attrs, self_closing } => {
+            Token::StartTag {
+                name,
+                attrs,
+                self_closing,
+            } => {
                 // Implied end tags: a start tag can implicitly close open elements it cannot be
                 // nested in — an unclosed <p>, a previous <li>/<td>/<tr>, etc. Close them first.
-                while stack.last().is_some_and(|(open, _, _)| implied_end(open, &name)) {
+                while stack
+                    .last()
+                    .is_some_and(|(open, _, _)| implied_end(open, &name))
+                {
                     let (tag, attrs, children) = stack.pop().expect("guarded by is_some_and above");
-                    current_children(&mut stack, &mut roots)
-                        .push(Node::Element { tag, attrs, children });
+                    current_children(&mut stack, &mut roots).push(Node::Element {
+                        tag,
+                        attrs,
+                        children,
+                    });
                 }
                 if self_closing || stack.len() >= MAX_DEPTH {
                     // A void/self-closing tag is a complete, childless element right away. Past the
@@ -63,8 +73,11 @@ pub fn parse(input: &str) -> Vec<Node> {
                     // tree depth so the *recursive* consumers (render, select, find, text) cannot
                     // overflow the stack on hostile deeply-nested input. Text still flows into the
                     // deepest open element, so nothing is lost, only re-parented.
-                    current_children(&mut stack, &mut roots)
-                        .push(Node::Element { tag: name, attrs, children: Vec::new() });
+                    current_children(&mut stack, &mut roots).push(Node::Element {
+                        tag: name,
+                        attrs,
+                        children: Vec::new(),
+                    });
                 } else {
                     stack.push((name, attrs, Vec::new()));
                 }
@@ -75,10 +88,14 @@ pub fn parse(input: &str) -> Vec<Node> {
                 // whose name is not open anywhere is a stray tag and is ignored.
                 if let Some(depth) = stack.iter().rposition(|(tag, _, _)| tag == &name) {
                     while stack.len() > depth {
-                        let (tag, attrs, children) =
-                            stack.pop().expect("rposition guarantees an element at depth");
-                        current_children(&mut stack, &mut roots)
-                            .push(Node::Element { tag, attrs, children });
+                        let (tag, attrs, children) = stack
+                            .pop()
+                            .expect("rposition guarantees an element at depth");
+                        current_children(&mut stack, &mut roots).push(Node::Element {
+                            tag,
+                            attrs,
+                            children,
+                        });
                     }
                 }
             }
@@ -87,7 +104,11 @@ pub fn parse(input: &str) -> Vec<Node> {
 
     // Auto-close any elements still open at end of input, innermost first.
     while let Some((tag, attrs, children)) = stack.pop() {
-        current_children(&mut stack, &mut roots).push(Node::Element { tag, attrs, children });
+        current_children(&mut stack, &mut roots).push(Node::Element {
+            tag,
+            attrs,
+            children,
+        });
     }
     roots
 }
@@ -126,11 +147,34 @@ fn is_p_closer(tag: &str) -> bool {
     matches!(
         tag,
         "p" | "div"
-            | "ul" | "ol" | "dl" | "menu"
-            | "table" | "section" | "article" | "header" | "footer" | "nav" | "main" | "aside"
-            | "blockquote" | "pre" | "hr" | "form" | "fieldset" | "figure" | "figcaption"
-            | "address" | "details" | "hgroup"
-            | "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
+            | "ul"
+            | "ol"
+            | "dl"
+            | "menu"
+            | "table"
+            | "section"
+            | "article"
+            | "header"
+            | "footer"
+            | "nav"
+            | "main"
+            | "aside"
+            | "blockquote"
+            | "pre"
+            | "hr"
+            | "form"
+            | "fieldset"
+            | "figure"
+            | "figcaption"
+            | "address"
+            | "details"
+            | "hgroup"
+            | "h1"
+            | "h2"
+            | "h3"
+            | "h4"
+            | "h5"
+            | "h6"
     )
 }
 
@@ -255,13 +299,20 @@ mod tree_tests {
     use super::*;
 
     fn elem(tag: &str, children: Vec<Node>) -> Node {
-        Element { tag: tag.into(), attrs: vec![], children }
+        Element {
+            tag: tag.into(),
+            attrs: vec![],
+            children,
+        }
     }
 
     fn elem_attrs(tag: &str, attrs: &[(&str, &str)], children: Vec<Node>) -> Node {
         Element {
             tag: tag.into(),
-            attrs: attrs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+            attrs: attrs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
             children,
         }
     }
@@ -336,7 +387,10 @@ mod tree_tests {
         // </b> closes <b>, completing the open <i> nested inside it; text after lands at the root.
         assert_eq!(
             parse("<b><i>x</b>y"),
-            vec![elem("b", vec![elem("i", vec![Text("x".into())])]), Text("y".into())]
+            vec![
+                elem("b", vec![elem("i", vec![Text("x".into())])]),
+                Text("y".into())
+            ]
         );
     }
 
@@ -365,7 +419,11 @@ mod tree_tests {
         // The whole point of this step: href survives from tag interior to DOM node.
         assert_eq!(
             parse("<a href=\"/about\">about</a>"),
-            vec![elem_attrs("a", &[("href", "/about")], vec![Text("about".into())])]
+            vec![elem_attrs(
+                "a",
+                &[("href", "/about")],
+                vec![Text("about".into())]
+            )]
         );
     }
 
@@ -422,7 +480,10 @@ mod tree_tests {
     fn a_new_paragraph_implicitly_closes_an_open_one() {
         assert_eq!(
             parse("<p>a<p>b"),
-            vec![elem("p", vec![Text("a".into())]), elem("p", vec![Text("b".into())])]
+            vec![
+                elem("p", vec![Text("a".into())]),
+                elem("p", vec![Text("b".into())])
+            ]
         );
     }
 
@@ -431,9 +492,35 @@ mod tree_tests {
         // Every p-closer must end the paragraph rather than nest inside it. One loop pins every
         // alternative of is_p_closer: drop any, and the <p> would absorb that block's content.
         for closer in [
-            "p", "div", "ul", "ol", "dl", "menu", "table", "section", "article", "header",
-            "footer", "nav", "main", "aside", "blockquote", "pre", "hr", "form", "fieldset",
-            "figure", "figcaption", "address", "details", "hgroup", "h1", "h2", "h3", "h4", "h5",
+            "p",
+            "div",
+            "ul",
+            "ol",
+            "dl",
+            "menu",
+            "table",
+            "section",
+            "article",
+            "header",
+            "footer",
+            "nav",
+            "main",
+            "aside",
+            "blockquote",
+            "pre",
+            "hr",
+            "form",
+            "fieldset",
+            "figure",
+            "figcaption",
+            "address",
+            "details",
+            "hgroup",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
             "h6",
         ] {
             let dom = parse(&format!("<p>a<{closer}>b"));
@@ -450,7 +537,11 @@ mod tree_tests {
             parse("<p>a<span>b</span>c</p>"),
             vec![elem(
                 "p",
-                vec![Text("a".into()), elem("span", vec![Text("b".into())]), Text("c".into())]
+                vec![
+                    Text("a".into()),
+                    elem("span", vec![Text("b".into())]),
+                    Text("c".into())
+                ]
             )]
         );
     }
@@ -461,7 +552,10 @@ mod tree_tests {
             parse("<ul><li>a<li>b</ul>"),
             vec![elem(
                 "ul",
-                vec![elem("li", vec![Text("a".into())]), elem("li", vec![Text("b".into())])]
+                vec![
+                    elem("li", vec![Text("a".into())]),
+                    elem("li", vec![Text("b".into())])
+                ]
             )]
         );
     }
@@ -524,8 +618,14 @@ mod tree_tests {
             vec![elem(
                 "table",
                 vec![
-                    elem("thead", vec![elem("tr", vec![elem("td", vec![Text("a".into())])])]),
-                    elem("tbody", vec![elem("tr", vec![elem("td", vec![Text("b".into())])])]),
+                    elem(
+                        "thead",
+                        vec![elem("tr", vec![elem("td", vec![Text("a".into())])])]
+                    ),
+                    elem(
+                        "tbody",
+                        vec![elem("tr", vec![elem("td", vec![Text("b".into())])])]
+                    ),
                 ]
             )]
         );
@@ -655,21 +755,31 @@ mod query_tests {
     #[test]
     fn queries_compose_to_extract_link_targets() {
         let tree = parse("<p><a href=\"/one\">1</a> and <a href=\"/two\">2</a></p>");
-        let hrefs: Vec<&str> = find_all(&tree, "a").iter().filter_map(|n| n.attr("href")).collect();
+        let hrefs: Vec<&str> = find_all(&tree, "a")
+            .iter()
+            .filter_map(|n| n.attr("href"))
+            .collect();
         assert_eq!(hrefs, vec!["/one", "/two"]);
     }
 
     #[test]
     fn find_by_id_returns_the_element_with_that_id() {
         let tree = parse("<div><p id=\"intro\">hi</p><p id=\"body\">bye</p></div>");
-        assert_eq!(find_by_id(&tree, "body").map(Node::text), Some("bye".into()));
+        assert_eq!(
+            find_by_id(&tree, "body").map(Node::text),
+            Some("bye".into())
+        );
         assert_eq!(find_by_id(&tree, "missing"), None);
     }
 
     #[test]
     fn find_by_class_matches_a_whole_class_token() {
-        let tree = parse("<p class=\"lead big\">a</p><p class=\"lead\">b</p><p class=\"small\">c</p>");
-        let hits: Vec<String> = find_by_class(&tree, "lead").iter().map(|n| n.text()).collect();
+        let tree =
+            parse("<p class=\"lead big\">a</p><p class=\"lead\">b</p><p class=\"small\">c</p>");
+        let hits: Vec<String> = find_by_class(&tree, "lead")
+            .iter()
+            .map(|n| n.text())
+            .collect();
         assert_eq!(hits, vec!["a", "b"]);
     }
 
@@ -700,4 +810,3 @@ mod query_tests {
         assert!(!parse("<p>y</p>")[0].has_class("lead"));
     }
 }
-

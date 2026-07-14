@@ -23,5 +23,5 @@ mod tokenizer;
 pub type Attrs = Vec<(String, String)>;
 
 pub use self::css::select;
-pub use self::dom::{Node, find, find_all, find_by_id, find_by_class, parse};
+pub use self::dom::{Node, find, find_all, find_by_class, find_by_id, parse};
 pub use self::tokenizer::{Token, attr, tokenize};

@@ -119,7 +119,11 @@ pub fn tokenize(input: &str) -> Vec<Token> {
             // decoded) but any '<' is literal — tags inside never become elements. Emit the element
             // with a single decoded text child and resume after the end tag.
             let (content, after) = take_rcdata(rest, &name);
-            tokens.push(Token::StartTag { name: name.clone(), attrs, self_closing: false });
+            tokens.push(Token::StartTag {
+                name: name.clone(),
+                attrs,
+                self_closing: false,
+            });
             if !content.is_empty() {
                 tokens.push(Token::Text(decode_entities(content)));
             }
@@ -127,7 +131,11 @@ pub fn tokenize(input: &str) -> Vec<Token> {
             rest = after;
             continue;
         }
-        tokens.push(Token::StartTag { name, attrs, self_closing });
+        tokens.push(Token::StartTag {
+            name,
+            attrs,
+            self_closing,
+        });
     }
 
     // Trailing character data after the last tag (or the whole input, if tag-free).
@@ -249,7 +257,10 @@ fn is_end_tag_match(after: &str, name: &str) -> bool {
     // Byte comparison via `get(..)` (not `&str[..]`) so a multibyte char right after `</` can't
     // panic and a too-short tail is simply `None`; once the ASCII name matches, `name.len()` is a
     // valid char boundary for the tail slice at the call sites.
-    if !bytes.get(..name.len()).is_some_and(|b| b.eq_ignore_ascii_case(name.as_bytes())) {
+    if !bytes
+        .get(..name.len())
+        .is_some_and(|b| b.eq_ignore_ascii_case(name.as_bytes()))
+    {
         return false;
     }
     match bytes.get(name.len()) {
@@ -461,25 +472,39 @@ mod tokenizer_tests {
     use super::*;
 
     fn start(name: &str) -> Token {
-        Token::StartTag { name: name.into(), attrs: vec![], self_closing: false }
+        Token::StartTag {
+            name: name.into(),
+            attrs: vec![],
+            self_closing: false,
+        }
     }
 
     fn start_attrs(name: &str, attrs: &[(&str, &str)]) -> Token {
         Token::StartTag {
             name: name.into(),
-            attrs: attrs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+            attrs: attrs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
             self_closing: false,
         }
     }
 
     fn self_closed(name: &str) -> Token {
-        Token::StartTag { name: name.into(), attrs: vec![], self_closing: true }
+        Token::StartTag {
+            name: name.into(),
+            attrs: vec![],
+            self_closing: true,
+        }
     }
 
     fn self_closed_attrs(name: &str, attrs: &[(&str, &str)]) -> Token {
         Token::StartTag {
             name: name.into(),
-            attrs: attrs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+            attrs: attrs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
             self_closing: true,
         }
     }
@@ -536,18 +561,27 @@ mod tokenizer_tests {
 
     #[test]
     fn a_double_quoted_attribute_is_parsed() {
-        assert_eq!(tokenize("<a href=\"x\">"), vec![start_attrs("a", &[("href", "x")])]);
+        assert_eq!(
+            tokenize("<a href=\"x\">"),
+            vec![start_attrs("a", &[("href", "x")])]
+        );
     }
 
     #[test]
     fn a_single_quoted_attribute_is_parsed() {
         // Pins the `quote == '\''` alternative in read_value.
-        assert_eq!(tokenize("<a href='x'>"), vec![start_attrs("a", &[("href", "x")])]);
+        assert_eq!(
+            tokenize("<a href='x'>"),
+            vec![start_attrs("a", &[("href", "x")])]
+        );
     }
 
     #[test]
     fn an_unquoted_attribute_runs_to_whitespace() {
-        assert_eq!(tokenize("<a href=x>"), vec![start_attrs("a", &[("href", "x")])]);
+        assert_eq!(
+            tokenize("<a href=x>"),
+            vec![start_attrs("a", &[("href", "x")])]
+        );
     }
 
     #[test]
@@ -562,7 +596,10 @@ mod tokenizer_tests {
     #[test]
     fn a_boolean_attribute_has_an_empty_value() {
         // `input` is a void element, hence self-closing.
-        assert_eq!(tokenize("<input disabled>"), vec![self_closed_attrs("input", &[("disabled", "")])]);
+        assert_eq!(
+            tokenize("<input disabled>"),
+            vec![self_closed_attrs("input", &[("disabled", "")])]
+        );
     }
 
     #[test]
@@ -578,7 +615,10 @@ mod tokenizer_tests {
         // Pins the `peek() == Some('=')` decision between boolean and valued attributes.
         assert_eq!(
             tokenize("<input disabled name=\"x\">"),
-            vec![self_closed_attrs("input", &[("disabled", ""), ("name", "x")])]
+            vec![self_closed_attrs(
+                "input",
+                &[("disabled", ""), ("name", "x")]
+            )]
         );
     }
 
@@ -599,7 +639,10 @@ mod tokenizer_tests {
     #[test]
     fn text_around_a_comment_survives_and_scanning_resumes_after_it() {
         // Pins the `i + 3` resume past "-->": a wrong offset would leak "-->" into "b".
-        assert_eq!(tokenize("a<!-- c -->b"), vec![Text("a".into()), Text("b".into())]);
+        assert_eq!(
+            tokenize("a<!-- c -->b"),
+            vec![Text("a".into()), Text("b".into())]
+        );
     }
 
     #[test]
@@ -647,12 +690,18 @@ mod tokenizer_tests {
     #[test]
     fn text_around_a_script_survives_and_scanning_resumes_after_it() {
         // Pins skip_raw_text's resume offsets: a wrong one would leak "</script>" into "b".
-        assert_eq!(tokenize("a<script>x</script>b"), vec![Text("a".into()), Text("b".into())]);
+        assert_eq!(
+            tokenize("a<script>x</script>b"),
+            vec![Text("a".into()), Text("b".into())]
+        );
     }
 
     #[test]
     fn a_style_element_is_skipped() {
-        assert_eq!(tokenize("<style>.a{color:red}</style>after"), vec![Text("after".into())]);
+        assert_eq!(
+            tokenize("<style>.a{color:red}</style>after"),
+            vec![Text("after".into())]
+        );
     }
 
     #[test]
@@ -668,7 +717,10 @@ mod tokenizer_tests {
 
     #[test]
     fn an_attribute_name_is_lowercased_but_its_value_is_not() {
-        assert_eq!(tokenize("<a HREF=\"X\">"), vec![start_attrs("a", &[("href", "X")])]);
+        assert_eq!(
+            tokenize("<a HREF=\"X\">"),
+            vec![start_attrs("a", &[("href", "X")])]
+        );
     }
 
     #[test]
@@ -680,14 +732,20 @@ mod tokenizer_tests {
     #[test]
     fn a_raw_text_element_is_matched_case_insensitively() {
         // <SCRIPT> ... </SCRIPT> is skipped even in uppercase, stray '<' and all.
-        assert_eq!(tokenize("<SCRIPT>x < y</SCRIPT>keep"), vec![Text("keep".into())]);
+        assert_eq!(
+            tokenize("<SCRIPT>x < y</SCRIPT>keep"),
+            vec![Text("keep".into())]
+        );
     }
 
     #[test]
     fn raw_text_skips_a_non_matching_end_tag_before_the_real_one() {
         // A `</b>` inside <script> is not the closer; the scan must advance past that `</` and keep
         // looking for `</script>`. Pins the loop-advance in skip_raw_text.
-        assert_eq!(tokenize("<script>a</b>c</script>keep"), vec![Text("keep".into())]);
+        assert_eq!(
+            tokenize("<script>a</b>c</script>keep"),
+            vec![Text("keep".into())]
+        );
     }
 
     #[test]
@@ -699,7 +757,10 @@ mod tokenizer_tests {
     #[test]
     fn content_after_a_doctype_is_kept_and_scanning_resumes() {
         // Pins the `i + 1` resume past the declaration's '>'.
-        assert_eq!(tokenize("<!doctype html><p>hi"), vec![start("p"), Text("hi".into())]);
+        assert_eq!(
+            tokenize("<!doctype html><p>hi"),
+            vec![start("p"), Text("hi".into())]
+        );
     }
 
     #[test]
@@ -739,11 +800,19 @@ mod tokenizer_tests {
         // Tags inside are literal (no child elements); entities are still decoded.
         assert_eq!(
             tokenize("<title>a<b>c &amp; d</title>"),
-            vec![start("title"), Text("a<b>c & d".into()), EndTag("title".into())]
+            vec![
+                start("title"),
+                Text("a<b>c & d".into()),
+                EndTag("title".into())
+            ]
         );
         assert_eq!(
             tokenize("<textarea><p>x</textarea>"),
-            vec![start("textarea"), Text("<p>x".into()), EndTag("textarea".into())]
+            vec![
+                start("textarea"),
+                Text("<p>x".into()),
+                EndTag("textarea".into())
+            ]
         );
     }
 
@@ -758,19 +827,28 @@ mod tokenizer_tests {
     #[test]
     fn an_empty_rcdata_element_emits_no_text_token() {
         // Pins the non-empty guard: `<title></title>` is just the two tags, no empty Text between.
-        assert_eq!(tokenize("<title></title>"), vec![start("title"), EndTag("title".into())]);
+        assert_eq!(
+            tokenize("<title></title>"),
+            vec![start("title"), EndTag("title".into())]
+        );
     }
 
     #[test]
     fn a_repeated_attribute_keeps_the_first_value() {
         // HTML5 drops later duplicates; the DOM stores only the first, and it is the one looked up.
-        assert_eq!(tokenize("<a href=\"1\" href=\"2\">"), vec![start_attrs("a", &[("href", "1")])]);
+        assert_eq!(
+            tokenize("<a href=\"1\" href=\"2\">"),
+            vec![start_attrs("a", &[("href", "1")])]
+        );
     }
 
     #[test]
     fn a_duplicate_attribute_is_detected_case_insensitively() {
         // Names are lowercased, so `HREF` and `href` are the same attribute — the first wins.
-        assert_eq!(tokenize("<a HREF=\"1\" href=\"2\">"), vec![start_attrs("a", &[("href", "1")])]);
+        assert_eq!(
+            tokenize("<a HREF=\"1\" href=\"2\">"),
+            vec![start_attrs("a", &[("href", "1")])]
+        );
     }
 
     #[test]
@@ -835,7 +913,11 @@ mod tokenizer_tests {
         // and vanishes. The `>` must still close the tag so the content survives.
         assert_eq!(
             tokenize("<div data=x'y>text</div>"),
-            vec![start_attrs("div", &[("data", "x'y")]), Text("text".into()), EndTag("div".into())]
+            vec![
+                start_attrs("div", &[("data", "x'y")]),
+                Text("text".into()),
+                EndTag("div".into())
+            ]
         );
     }
 
@@ -856,7 +938,12 @@ mod tokenizer_tests {
         // the real `</title>`.
         assert_eq!(
             tokenize("<title>x</titlee>y</title>z"),
-            vec![start("title"), Text("x</titlee>y".into()), EndTag("title".into()), Text("z".into())]
+            vec![
+                start("title"),
+                Text("x</titlee>y".into()),
+                EndTag("title".into()),
+                Text("z".into())
+            ]
         );
     }
 
@@ -906,7 +993,10 @@ mod attr_tests {
     use crate::parser::Attrs;
 
     fn attrs(pairs: &[(&str, &str)]) -> Attrs {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
     }
 
     #[test]
@@ -1005,7 +1095,10 @@ mod entity_tests {
 
     #[test]
     fn entities_in_text_are_decoded_through_tokenize() {
-        assert_eq!(tokenize("Tom &amp; Jerry"), vec![Token::Text("Tom & Jerry".into())]);
+        assert_eq!(
+            tokenize("Tom &amp; Jerry"),
+            vec![Token::Text("Tom & Jerry".into())]
+        );
     }
 
     #[test]
@@ -1020,4 +1113,3 @@ mod entity_tests {
         );
     }
 }
-

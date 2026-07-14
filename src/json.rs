@@ -172,11 +172,18 @@ const MAX_JSON_DEPTH: u32 = 128;
 /// data. Intended for the small, well-formed messages a JSON-RPC client sends. Named `from_str`
 /// (serde-style) to avoid colliding with the HTML [`crate::parser::parse`].
 pub fn from_str(input: &str) -> Option<Value> {
-    let mut p = Parser { bytes: input.as_bytes(), pos: 0 };
+    let mut p = Parser {
+        bytes: input.as_bytes(),
+        pos: 0,
+    };
     p.skip_ws();
     let value = p.value(0)?;
     p.skip_ws();
-    if p.pos == p.bytes.len() { Some(value) } else { None }
+    if p.pos == p.bytes.len() {
+        Some(value)
+    } else {
+        None
+    }
 }
 
 /// A cursor over the input bytes. JSON's structural characters are all ASCII, so byte-indexing
@@ -502,7 +509,10 @@ mod tests {
     #[test]
     fn decodes_every_short_escape() {
         assert_eq!(
-            from_str(r#""a\"b\\c\/d\be\ff\ng\rh\ti""#).unwrap().as_str().unwrap(),
+            from_str(r#""a\"b\\c\/d\be\ff\ng\rh\ti""#)
+                .unwrap()
+                .as_str()
+                .unwrap(),
             "a\"b\\c/d\u{8}e\u{c}f\ng\rh\ti"
         );
     }
@@ -535,11 +545,23 @@ mod tests {
     #[test]
     fn decodes_surrogate_pairs_across_the_range() {
         // Three points pin the combine arithmetic 0x10000 + ((hi-0xD800)<<10) + (lo-0xDC00).
-        assert_eq!(from_str("\"\\uD800\\uDC00\"").unwrap().as_str().unwrap(), "\u{10000}"); // min
-        assert_eq!(from_str("\"\\uDBFF\\uDFFF\"").unwrap().as_str().unwrap(), "\u{10FFFF}"); // max
-        assert_eq!(from_str("\"\\uD83D\\uDE00\"").unwrap().as_str().unwrap(), "\u{1F600}"); // 😀
+        assert_eq!(
+            from_str("\"\\uD800\\uDC00\"").unwrap().as_str().unwrap(),
+            "\u{10000}"
+        ); // min
+        assert_eq!(
+            from_str("\"\\uDBFF\\uDFFF\"").unwrap().as_str().unwrap(),
+            "\u{10FFFF}"
+        ); // max
+        assert_eq!(
+            from_str("\"\\uD83D\\uDE00\"").unwrap().as_str().unwrap(),
+            "\u{1F600}"
+        ); // 😀
         // Content after a spliced surrogate pair still parses (re-enters continue_string).
-        assert_eq!(from_str("\"\\uD83D\\uDE00!\"").unwrap().as_str().unwrap(), "\u{1F600}!");
+        assert_eq!(
+            from_str("\"\\uD83D\\uDE00!\"").unwrap().as_str().unwrap(),
+            "\u{1F600}!"
+        );
     }
 
     #[test]
@@ -581,7 +603,11 @@ mod tests {
         assert_eq!(from_str("[]"), Some(Value::Array(vec![])));
         assert_eq!(
             from_str("[1, true, \"x\"]"),
-            Some(Value::Array(vec![Value::Number(1.0), Value::Bool(true), Value::String("x".into())]))
+            Some(Value::Array(vec![
+                Value::Number(1.0),
+                Value::Bool(true),
+                Value::String("x".into())
+            ]))
         );
     }
 
@@ -630,7 +656,14 @@ mod tests {
         assert!(from_str(&format!("{}1{}", "[".repeat(d + 1), "]".repeat(d + 1))).is_none());
         // Objects: same, pinning the object-side depth check independently.
         assert!(from_str(&format!("{}1{}", r#"{"a":"#.repeat(d), "}".repeat(d))).is_some());
-        assert!(from_str(&format!("{}1{}", r#"{"a":"#.repeat(d + 1), "}".repeat(d + 1))).is_none());
+        assert!(
+            from_str(&format!(
+                "{}1{}",
+                r#"{"a":"#.repeat(d + 1),
+                "}".repeat(d + 1)
+            ))
+            .is_none()
+        );
     }
 
     // --- reader: document-level errors -------------------------------------------------------

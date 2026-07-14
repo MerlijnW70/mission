@@ -62,7 +62,11 @@ fn main() -> ExitCode {
     } else {
         let mut gathered = Vec::new();
         for &path in &config.paths {
-            let read = if path == "-" { read_stdin() } else { std::fs::read_to_string(path) };
+            let read = if path == "-" {
+                read_stdin()
+            } else {
+                std::fs::read_to_string(path)
+            };
             match read {
                 Ok(html) => gathered.push((path.to_string(), html)),
                 Err(e) => {
@@ -78,7 +82,10 @@ fn main() -> ExitCode {
     for (name, input) in &inputs {
         let dom = parse(input);
         if let Outcome::FailOnEmpty = cli::run(&config, &dom, &mut sink) {
-            eprintln!("mission: no elements match `{}` in {name}", config.selector.unwrap_or(""));
+            eprintln!(
+                "mission: no elements match `{}` in {name}",
+                config.selector.unwrap_or("")
+            );
             code = ExitCode::FAILURE;
         }
     }
