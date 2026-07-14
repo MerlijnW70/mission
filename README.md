@@ -36,18 +36,38 @@ HTML  →  tokenize  →  parse (DOM)  →  query (CSS)  →  render
 There is **no `mission fetch`** — Mission has no network layer by design. Feed it HTML from wherever:
 a file, a pipe, `curl`.
 
-## Quick start
+## Install
 
-Building and running Mission needs **only Rust** — nothing else.
+**No toolchain required** — install a prebuilt binary in one line (macOS / Linux):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/MerlijnW70/mission/main/install.sh | sh
+```
+
+Or download a binary for your platform (Windows, macOS, Linux · x86-64 & arm64) from the
+[latest release](https://github.com/MerlijnW70/mission/releases/latest) and put it on your `PATH`.
+
+**With Rust:**
+
+```sh
+cargo install --git https://github.com/MerlijnW70/mission mission
+```
+
+Then run it:
+
+```sh
+mission page.html                    # render an HTML file to text
+mission page.html --select "h1"      # query it
+echo '<h1>hi</h1>' | mission -        # or pipe HTML in
+```
+
+### Build from source
 
 ```sh
 git clone https://github.com/MerlijnW70/mission
 cd mission
-cargo build --release
-./target/release/mission                      # render the built-in demo page
-./target/release/mission page.html            # render an HTML file to text
-./target/release/mission page.html --select "h1"   # query it
-cargo test                                     # run the test suite
+cargo build --release   # ./target/release/mission
+cargo test              # run the test suite
 ```
 
 ### CLI
