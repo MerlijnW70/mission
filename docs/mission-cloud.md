@@ -40,6 +40,12 @@ speaks a compact, integrity-checked (CRC) binary framing with zero-copy decoding
 message, with corruption caught at the wire, so a stream of jobs runs as a continuous, low-latency
 machine.
 
+> **Built on a core that's fast in the open.** The engine underneath is the free Mission parser: it
+> queries a parsed page at **> 1 GB/s** and parses at ~50 MB/s on a single core — a
+> [benchmark you can run yourself](../README.md#performance). Mission Cloud's transport and
+> scheduling ride on top of that proven throughput; you're not trusting a black box, you're trusting
+> a number you can reproduce.
+
 ### ☁️ Managed & distributed
 Run extraction at scale without owning the operational burden: the platform distributes work,
 mediates the slicer-and-brain feedback loop, and stays up. Hosted, monitored, and observable — you
