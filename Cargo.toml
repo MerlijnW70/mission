@@ -11,3 +11,8 @@ categories = ["parser-implementations", "text-processing", "command-line-utiliti
 
 # This crate has zero runtime dependencies — the table is intentionally empty.
 [dependencies]
+
+# The benchmark uses a std-only harness, so there are no dev-dependencies either.
+[[bench]]
+name = "parse"
+harness = false

@@ -108,6 +108,20 @@ HTML  →  tokenize  →  parse (DOM)  →  query (CSS)  →  render
 - **Mutation-tested.** Behaviour is pinned by an extensive, mutation-tested suite — a green build
   means the tested behaviour is genuinely exercised, not merely that the code compiles.
 
+## Performance
+
+Single core, zero dependencies, no SIMD — and the benchmark itself has **no dependencies either**
+(a `std`-only harness). Reproduce any time with `cargo bench`:
+
+| Stage | Throughput | 1 MB page |
+| --- | --- | --- |
+| Parse HTML → DOM | ~50 MB/s | ~20 ms |
+| CSS `select` over the parsed tree | **> 1 GB/s** | < 1 ms |
+| Render to text | ~175 MB/s | ~6 ms |
+
+The shape that matters for extraction: **parse a page once, then query it as many times as you like
+— selection runs at gigabytes per second.**
+
 ## Library use
 
 ```rust
